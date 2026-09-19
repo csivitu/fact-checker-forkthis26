@@ -28,13 +28,14 @@ def retrieve_sources_node(state: AgentState) -> dict:
                 query=query,
                 max_results=5
             )
-
+        #If tavily returns usable data without "publishdate" it will still work that is why r.get() 
+        #rest of the data will stil be read and will work normaly if date isn't avilable
             for r in results.get("results", []):
                 collected_sources.append({
                     "title": r["title"],
                     "url": r["url"],
                     "snippet": r["content"],
-                    "publishedDate": r["publishedDate"],
+                    "publishedDate": r.get("publishedDate"), 
                 })
 
         except Exception as e:
