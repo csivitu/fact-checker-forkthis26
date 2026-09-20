@@ -13,7 +13,7 @@ def route_research(state: AgentState) -> str:
 
 
    
-    loop_count = state.get("loop_count", 0)
+    loop_count = state.get("loops", 0)
 
     if len(sources) >= 3 or loop_count >= 2:
         return "scorer"
