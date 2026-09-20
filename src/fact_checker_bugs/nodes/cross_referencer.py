@@ -1,6 +1,27 @@
 import time as _time
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from fact_checker_bugs.state import AgentState
+
+# Query params that identify a visitor/campaign, not the page itself.
+TRACKING_PARAM_PREFIXES = ("utm_",)
+TRACKING_PARAMS = {"fbclid", "gclid", "msclkid", "mc_cid", "mc_eid"}
+
+
+def normalize_url(url: str) -> str:
+    parts = urlsplit(url.strip())
+    query = [
+        (k, v)
+        for k, v in parse_qsl(parts.query, keep_blank_values=True)
+        if k not in TRACKING_PARAMS and not k.startswith(TRACKING_PARAM_PREFIXES)
+    ]
+    return urlunsplit((
+        parts.scheme.lower(),
+        parts.netloc.lower(),
+        parts.path.rstrip("/") or "/",
+        urlencode(sorted(query)),
+        "",  # fragment never changes the document
+    ))
 
 
 def cross_reference_node(state: AgentState) -> dict:
@@ -12,9 +33,12 @@ def cross_reference_node(state: AgentState) -> dict:
 
     for src in raw_sources:
         url = src.get("url")
+        if not url:
+            continue
 
-        if url and url not in seen_urls:
-            seen_urls.add(url)
+        key = normalize_url(url)
+        if key not in seen_urls:
+            seen_urls.add(key)
             deduped_sources.append(src)
 
     print(
