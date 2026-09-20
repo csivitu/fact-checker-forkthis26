@@ -31,10 +31,10 @@ def retrieve_sources_node(state: AgentState) -> dict:
 
             for r in results.get("results", []):
                 collected_sources.append({
-                    "title": r["title"],
-                    "url": r["url"],
-                    "snippet": r["content"],
-                    "publishedDate": r["publishedDate"],
+                    "title": r.get("title", ""),
+                    "url": r.get("url", ""),
+                    "snippet": r.get("content", ""),
+                    "publishedDate": r.get("publishedDate"),
                 })
 
         except Exception as e:
