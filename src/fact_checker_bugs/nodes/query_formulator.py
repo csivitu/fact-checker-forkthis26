@@ -8,6 +8,10 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from fact_checker_bugs.state import AgentState
 from fact_checker_bugs.utils.llm_utils import get_all_keys, invoke_with_backoff
 
+# The formulator only needs to know what ground is already covered, not re-read it.
+MAX_EVIDENCE_SOURCES = 5
+SNIPPET_PREVIEW_CHARS = 300
+
 
 class SearchQueries(BaseModel):
     queries: List[str] = Field(
@@ -31,12 +35,13 @@ def formulate_queries_node(state: AgentState) -> dict:
     sources = state.get("sources", [])
 
 
+    recent_sources = sources[-MAX_EVIDENCE_SOURCES:]
     accumulated_evidence = "\n\n".join(
         [
             f"Title: {source.get('title', 'Unknown')}\n"
             f"URL: {source.get('url', 'N/A')}\n"
-            f"Content: {source.get('snippet', '')}"
-            for source in sources
+            f"Content: {source.get('snippet', '')[:SNIPPET_PREVIEW_CHARS]}"
+            for source in recent_sources
         ]
     )
 
