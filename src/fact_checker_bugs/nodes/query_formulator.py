@@ -15,6 +15,28 @@ class SearchQueries(BaseModel):
     )
 
 
+def _format_recent_evidence(sources: List[dict], max_entries: int = 3, max_chars: int = 1500) -> str:
+    if not sources:
+        return "No previous research evidence."
+
+    recent_sources = sources[-max_entries:]
+    evidence_blocks = []
+    current_length = 0
+
+    for source in reversed(recent_sources):
+        block = (
+            f"Title: {source.get('title', 'Unknown')}\n"
+            f"URL: {source.get('url', 'N/A')}\n"
+            f"Content: {source.get('snippet', '')}"
+        )
+        if current_length + len(block) > max_chars:
+            break
+        evidence_blocks.insert(0, block)
+        current_length += len(block)
+
+    return "\n\n".join(evidence_blocks) if evidence_blocks else "No previous research evidence."
+
+
 def formulate_queries_node(state: AgentState) -> dict:
     start = _time.time()
     key_cycle = cycle(get_all_keys())
@@ -29,16 +51,7 @@ def formulate_queries_node(state: AgentState) -> dict:
 
     claim = state["claim"]
     sources = state.get("sources", [])
-
-
-    accumulated_evidence = "\n\n".join(
-        [
-            f"Title: {source.get('title', 'Unknown')}\n"
-            f"URL: {source.get('url', 'N/A')}\n"
-            f"Content: {source.get('snippet', '')}"
-            for source in sources
-        ]
-    )
+    accumulated_evidence = _format_recent_evidence(sources)
 
     prompt = f"""
     Analyze the following claim and generate exactly ONE highly-targeted
