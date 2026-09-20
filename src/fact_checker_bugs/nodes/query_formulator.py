@@ -28,7 +28,7 @@ def formulate_queries_node(state: AgentState) -> dict:
         return llm.with_structured_output(SearchQueries)
 
     claim = state["claim"]
-    sources = state.get("sources", [])
+    sources = state.get("sources", [])[-5:]
 
 
     accumulated_evidence = "\n\n".join(
