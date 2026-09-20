@@ -34,7 +34,7 @@ def retrieve_sources_node(state: AgentState) -> dict:
                     "title": r["title"],
                     "url": r["url"],
                     "snippet": r["content"],
-                    "publishedDate": r["publishedDate"],
+                    "publishedDate": r.get("publishedDate"),
                 })
 
         except Exception as e:
