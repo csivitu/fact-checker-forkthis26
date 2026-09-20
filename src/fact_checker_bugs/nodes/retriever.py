@@ -30,11 +30,15 @@ def retrieve_sources_node(state: AgentState) -> dict:
             )
 
             for r in results.get("results", []):
+                url = r.get("url")
+                if not url:
+                    continue
+
                 collected_sources.append({
-                    "title": r["title"],
-                    "url": r["url"],
-                    "snippet": r["content"],
-                    "publishedDate": r["publishedDate"],
+                    "title": r.get("title", "Untitled source"),
+                    "url": url,
+                    "snippet": r.get("content", ""),
+                    "publishedDate": r.get("publishedDate"),
                 })
 
         except Exception as e:
