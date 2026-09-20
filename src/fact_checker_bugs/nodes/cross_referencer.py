@@ -1,6 +1,44 @@
 import time as _time
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from fact_checker_bugs.state import AgentState
+
+TRACKING_PARAMS = {
+    "utm_source",
+    "utm_medium",
+    "utm_campaign",
+    "utm_term",
+    "utm_content",
+    "utm_id",
+    "fbclid",
+    "gclid",
+    "msclkid",
+    "mc_cid",
+    "mc_eid",
+}
+
+
+def normalize_url(url: str) -> str:
+    if not url:
+        return url
+
+    parsed = urlsplit(url)
+    cleaned_query = []
+    for key, value in parse_qsl(parsed.query, keep_blank_values=True):
+        if key.lower() in TRACKING_PARAMS:
+            continue
+        cleaned_query.append((key, value))
+
+    normalized_path = parsed.path.rstrip("/") if parsed.path not in ("", "/") else ""
+    normalized = urlunsplit((
+        parsed.scheme.lower(),
+        parsed.netloc.lower(),
+        normalized_path or "/",
+        urlencode(cleaned_query),
+        "",
+    ))
+
+    return normalized
 
 
 def cross_reference_node(state: AgentState) -> dict:
@@ -12,10 +50,16 @@ def cross_reference_node(state: AgentState) -> dict:
 
     for src in raw_sources:
         url = src.get("url")
+        if not url:
+            continue
 
-        if url and url not in seen_urls:
-            seen_urls.add(url)
-            deduped_sources.append(src)
+        normalized_url = normalize_url(url)
+        if normalized_url not in seen_urls:
+            seen_urls.add(normalized_url)
+            deduped_sources.append({
+                **src,
+                "url": normalized_url,
+            })
 
     print(
         f"[timing] cross_referencer took "
