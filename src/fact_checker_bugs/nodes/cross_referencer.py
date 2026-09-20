@@ -1,6 +1,23 @@
 import time as _time
+from urllib.parse import urlparse, urlunparse, parse_qsl, urlencode
 
 from fact_checker_bugs.state import AgentState
+
+TRACKING_PARAMS = {"fbclid", "gclid", "msclkid", "mc_cid", "mc_eid", "igshid", "ref_src"}
+
+
+def _is_tracking_param(key: str) -> bool:
+    """Report whether a query parameter identifies a campaign rather than the page."""
+    key = key.lower()
+    return key.startswith("utm_") or key in TRACKING_PARAMS
+
+
+def normalize_url(url: str) -> str:
+    """Reduce cosmetic URL variations of one page to a single comparable key."""
+    parsed = urlparse(url)
+    kept = sorted((k, v) for k, v in parse_qsl(parsed.query) if not _is_tracking_param(k))
+    path = parsed.path.rstrip("/") or "/"
+    return urlunparse((parsed.scheme.lower(), parsed.netloc.lower(), path, "", urlencode(kept), ""))
 
 
 def cross_reference_node(state: AgentState) -> dict:
@@ -12,9 +29,10 @@ def cross_reference_node(state: AgentState) -> dict:
 
     for src in raw_sources:
         url = src.get("url")
+        key = normalize_url(url) if url else None
 
-        if url and url not in seen_urls:
-            seen_urls.add(url)
+        if key and key not in seen_urls:
+            seen_urls.add(key)
             deduped_sources.append(src)
 
     print(
