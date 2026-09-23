@@ -47,7 +47,7 @@ def retrieve_sources_node(state: AgentState) -> dict:
     )
 
     return {
-        "sources": collected_sources,
+        "sources": state.get("sources", []) + collected_sources,
         "loop_count": state.get("loop_count", 0) + 1
     }
 
